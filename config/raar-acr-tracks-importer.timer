@@ -1,0 +1,12 @@
+# /etc/systemd/system/raar-acr-tracks-importer.timer
+# sudo systemctl enable raar-acr-tracks-importertimer
+# sudo systemctl start raar-acr-tracks-importer.timer
+
+[Unit]
+Description=Add tracks to raar from ACR Cloud
+
+[Timer]
+OnCalendar=*:15
+
+[Install]
+WantedBy=timers.target

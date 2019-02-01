@@ -1,0 +1,10 @@
+raar:
+  url: https://archiv.rabe.ch/api
+  username:
+  password:
+  options:
+    verify_ssl: 0 # OpenSSL::SSL::VERIFY_NONE
+
+acr:
+  url: https://api.acrcloud.com/v1/monitor-streams/{stream_id}/results
+  access_key:
