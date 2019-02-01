@@ -13,7 +13,7 @@ class RaarAcrTracksImporter
   LATEST_RAAR_TRACK_PATH = 'tracks?sort=-started_at&page[size]=1'.freeze
 
   def run
-    p latest_track = fetch_raar_latest_track
+    latest_track = fetch_raar_latest_track
     if latest_track
       import_latest(Time.parse(latest_track['attributes']['started_at']))
     else
@@ -51,7 +51,6 @@ class RaarAcrTracksImporter
 
   def each_acr_track(date, &block)
     data = fetch_from_acr(date)
-    puts "ACR has #{data.size} entries for #{date}"
     if data.is_a?(Array)
       iterate_without_duplicates(data, &block)
       true
@@ -73,9 +72,8 @@ class RaarAcrTracksImporter
 
   def assert_no_duplicate(previous, current)
     if same_track?(previous, current)
-      # Try to ignore duplicates
+      # Ignore duplicates
       current[:started_at] = previous[:started_at]
-      puts "DROPPING DUPLICATE #{previous}"
       false
     else
       assert_no_overlapping(previous, current)
