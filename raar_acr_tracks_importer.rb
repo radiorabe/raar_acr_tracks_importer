@@ -5,6 +5,7 @@ require 'bundler/setup'
 Bundler.require(:default)
 require 'yaml'
 require 'json'
+require 'syslog/logger'
 
 class RaarAcrTracksImporter
 
@@ -13,15 +14,21 @@ class RaarAcrTracksImporter
   LATEST_RAAR_TRACK_PATH = 'tracks?sort=-started_at&page[size]=1'.freeze
 
   def run
-    latest_track = fetch_raar_latest_track
-    if latest_track
-      import_latest(Time.parse(latest_track['attributes']['started_at']))
-    else
-      import_all_time
-    end
+    import_latest(date_to_import_from)
+  rescue StandardError => e
+    logger.fatal("#{e}\n#{e.backtrace.join("\n")}")
   end
 
   private
+
+  def date_to_import_from
+    latest_track = fetch_raar_latest_track
+    if latest_track
+      Time.parse(latest_track['attributes']['started_at'])
+    else
+      find_first_date_ever.to_time
+    end
+  end
 
   def fetch_raar_latest_track
     response = raar_request(:get,
@@ -33,40 +40,52 @@ class RaarAcrTracksImporter
   end
 
   def import_latest(since)
-    (since.to_date..Date.today).each do |date|
+    logger.info("Importing all tracks since #{since}")
+    (since.to_date..today).each do |date|
       import_tracks(date, since)
     end
   end
 
-  def import_all_time
-    date = Date.today
-    date -= 1 while import_tracks(date)
-  end
-
-  def import_tracks(date, since = nil)
-    each_acr_track(date) do |track|
-      create_track(track) if !since || track[:started_at] > since
+  def find_first_date_ever(initial = today, step = 32)
+    date = initial
+    body = nil
+    while body.to_s != '[]'
+      date -= step
+      body = fetch_from_acr(date)
     end
+    narrow_search_dates(date, step)
+  rescue RestClient::InternalServerError
+    # first ACR response on date without entries is 500, second []
+    narrow_search_dates(date, step)
   end
 
-  def each_acr_track(date, &block)
-    data = fetch_from_acr(date)
-    if data.is_a?(Array)
-      iterate_without_duplicates(data, &block)
-      true
-    elsif data.is_a?(Hash) && json['status'] == 500
-      false
+  def narrow_search_dates(date, step)
+    if step == 1
+      date + 1
     else
-      raise("Unexpected JSON data #{data.class}")
+      find_first_date_ever(date + step, step / 2)
     end
+  end
+
+  def import_tracks(date, since)
+    data = fetch_json_from_acr(date)
+    imported_count = 0
+    iterate_without_duplicates(data) do |track|
+      if track[:started_at] > since
+        create_track(track)
+        imported_count += 1
+      end
+    end
+    logger.info("Imported #{imported_count} of #{data.size} tracks for #{date}")
   end
 
   def iterate_without_duplicates(data)
-    previous = nil
     data.each do |entry|
       current = convert_track(entry)
-      yield previous if previous && assert_no_duplicate(previous, current)
-      previous = current
+      if @previous_track && assert_no_duplicate(@previous_track, current)
+        yield @previous_track
+      end
+      @previous_track = current
     end
   end
 
@@ -74,6 +93,8 @@ class RaarAcrTracksImporter
     if same_track?(previous, current)
       # Ignore duplicates
       current[:started_at] = previous[:started_at]
+      logger.debug("Ignoring duplicate track #{current[:title]}" \
+                   " at #{current[:started_at]}")
       false
     else
       assert_no_overlapping(previous, current)
@@ -85,6 +106,9 @@ class RaarAcrTracksImporter
   def assert_no_overlapping(previous, current)
     # previous overlaps into current => set previous finished_at earlier
     if current[:started_at] < previous[:finished_at]
+      logger.debug("Trim overlapping track #{previous[:title]} at " \
+                  "#{current[:started_at]} for " \
+                  "#{(previous[:finished_at] - current[:started_at]).round}s")
       previous[:finished_at] = current[:started_at]
     end
   end
@@ -118,7 +142,7 @@ class RaarAcrTracksImporter
                  content_type: JSON_API_CONTENT_TYPE,
                  accept: JSON_API_CONTENT_TYPE)
   rescue RestClient::UnprocessableEntity => e
-    puts e.response.to_s
+    logger.error("Could not create track #{track.inspect}:\n#{e.response}")
     raise e
   end
 
@@ -157,9 +181,8 @@ class RaarAcrTracksImporter
     )
   end
 
-  def fetch_from_acr(date)
-    body = RestClient.get(acr_url(date)).to_s
-    JSON.parse(body)
+  def raar_url
+    settings['raar']['url']
   end
 
   def raar_http_options
@@ -170,14 +193,21 @@ class RaarAcrTracksImporter
       end
   end
 
+  def fetch_json_from_acr(date)
+    body = fetch_from_acr(date).to_s
+    JSON.parse(body).sort_by do |e|
+      [e['metadata']['timestamp_utc'], e['metadata']['played_duration']]
+    end
+  end
+
+  def fetch_from_acr(date)
+    RestClient.get(acr_url(date))
+  end
+
   def acr_url(date)
     url = settings['acr']['url']
     key = settings['acr']['access_key']
     "#{url}?access_key=#{key}&date=#{date.strftime('%Y%m%d')}"
-  end
-
-  def raar_url
-    settings['raar']['url']
   end
 
   def settings
@@ -190,6 +220,18 @@ class RaarAcrTracksImporter
 
   def home
     File.join(__dir__)
+  end
+
+  def today
+    @today ||= Date.today
+  end
+
+  def logger
+    # Syslog::Logger.new('raar-acr-tracks-importer')
+    # Logger.new(STDOUT)
+    @logger ||= Syslog::Logger.new('raar-acr-tracks-importer').tap do |logger|
+      logger.level = Logger::INFO
+    end
   end
 
 end
