@@ -2,7 +2,7 @@
 
 Fetch tracks recognized by [ACR Cloud](https://www.acrcloud.com/) and import them into [raar](https://github.com/radiorabe/raar).
 
-See configuration in `config/settings.example.yml`. Copy this file to `config/settings.yml`, complete it and run `raar_acr_tracks_importer.rb`.
+See configuration in `config/settings.example.yml`. Copy this file to `config/settings.yml`, complete it and run `bin/raar_acr_tracks_importer.rb`.
 
 
 ## Deployment

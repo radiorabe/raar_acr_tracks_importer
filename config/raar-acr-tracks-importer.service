@@ -8,4 +8,4 @@ Type=simple
 User=raar-acr-tracks-importer
 Nice=10
 WorkingDirectory=/opt/raar-acr-tracks-importer
-ExecStart=/usr/bin/scl enable rh-ruby25 -- ./raar_acr_tracks_importer.rb
+ExecStart=/usr/bin/scl enable rh-ruby25 -- ./bin/raar_acr_tracks_importer.rb

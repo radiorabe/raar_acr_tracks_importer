@@ -8,3 +8,5 @@ raar:
 acr:
   url: https://api.acrcloud.com/v1/monitor-streams/{stream_id}/results
   access_key:
+
+log: syslog
