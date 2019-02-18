@@ -9,7 +9,7 @@ See configuration in `config/settings.example.yml`. Copy this file to `config/se
 
 ## Initial
 
-* Install dependencies: `yum install gcc gcc-c++ glibc-headers rh-ruby22-ruby-devel rh-ruby22-rubygem-bundler libxml2-devel libxslt-devel`
+* Install dependencies: `yum install gcc gcc-c++ glibc-headers rh-ruby25-ruby-devel rh-ruby25-rubygem-bundler libxml2-devel libxslt-devel`
 * Create a user on the server:
   * `useradd --home-dir /opt/raar-acr-tracks-importer --create-home --user-group raar-acr-tracks-importer`
   * `usermod -a -G raar-acr-tracks-importer <your-ssh-user>`
@@ -24,7 +24,7 @@ See configuration in `config/settings.example.yml`. Copy this file to `config/se
 * Prepare the dependencies on your local machine: `bundle package --all-platforms`
 * SCP or Rsync all files: `rsync -avz --exclude .git --exclude .bundle --exclude config/settings.yml . raar-acr-tracks-importer@server:/opt/raar-acr-tracks-importer/`.
 * Install the dependencies on the server (as `raar-acr-tracks-importer` in `/opt/raar-acr-tracks-importer`):
-  `source /opt/rh/rh-ruby22/enable && bundle install --deployment --local`
+  `source /opt/rh/rh-ruby25/enable && bundle install --deployment --local`
 
 
 ## License

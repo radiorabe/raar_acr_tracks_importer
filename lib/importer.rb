@@ -36,12 +36,13 @@ class Importer
     tracks = acr_client.fetch_tracks(date)
     imported_count = 0
     iterate_without_duplicates(tracks) do |track|
-      if track.started_at > since
+      if track.started_at > since && track.duration > minimum_duration
         raar_client.create_track(track.attributes)
         imported_count += 1
       end
     end
-    logger.info("Imported #{imported_count} of #{tracks.size} tracks for #{date}")
+    logger.info("Imported #{imported_count} of #{tracks.size}" \
+                " tracks for #{date}")
   end
 
   def iterate_without_duplicates(tracks)
@@ -77,6 +78,10 @@ class Importer
     end
   end
 
+  def minimum_duration
+    settings['importer']['minimum_duration'] || 0
+  end
+
   def acr_client
     @acr_client ||= AcrClient.new(settings['acr'])
   end
@@ -100,7 +105,7 @@ class Importer
   end
 
   def create_logger
-    if settings['log'] == 'syslog'
+    if settings['importer']['log'] == 'syslog'
       Syslog::Logger.new('raar-acr-tracks-importer')
     else
       Logger.new(STDOUT)

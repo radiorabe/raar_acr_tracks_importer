@@ -22,6 +22,10 @@ class Track
       similar_key?(other, :artist)
   end
 
+  def duration
+    finished_at - started_at
+  end
+
   private
 
   def similar_key?(other, key)

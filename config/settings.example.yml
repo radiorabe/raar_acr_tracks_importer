@@ -1,3 +1,7 @@
+importer:
+  log: syslog
+  minimum_duration: 30 # seconds
+
 raar:
   url: https://archiv.rabe.ch/api
   username:
@@ -9,4 +13,3 @@ acr:
   url: https://api.acrcloud.com/v1/monitor-streams/{stream_id}/results
   access_key:
 
-log: syslog
