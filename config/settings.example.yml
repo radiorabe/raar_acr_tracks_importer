@@ -1,5 +1,6 @@
 importer:
   log: syslog
+  log_level: info
   minimum_duration: 30 # seconds
 
 raar:

@@ -10,7 +10,7 @@ class Importer
 
   def run
     import_latest(date_to_import_from)
-  rescue StandardError => e
+  rescue Exception => e # rubocop:disable Lint/RescueException
     logger.fatal("#{e}\n#{e.backtrace.join("\n")}")
   end
 
@@ -100,7 +100,8 @@ class Importer
 
   def logger
     @logger ||= create_logger.tap do |logger|
-      logger.level = Logger::DEBUG
+      level = settings['importer']['log_level'] || 'info'
+      logger.level = Logger.const_get(level.upcase)
     end
   end
 
