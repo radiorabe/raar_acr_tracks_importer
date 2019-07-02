@@ -27,7 +27,7 @@ class Importer
 
   def import_latest(since)
     logger.info("Importing all tracks since #{since}")
-    (since.to_date..Date.today).each do |date|
+    (since.getutc.to_date..Date.today).each do |date|
       import_tracks(date, since)
     end
   end
