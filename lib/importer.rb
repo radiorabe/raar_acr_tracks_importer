@@ -1,6 +1,5 @@
 require 'yaml'
 require 'json'
-require 'syslog/logger'
 
 require_relative 'track'
 require_relative 'raar_client'
@@ -47,9 +46,7 @@ class Importer
 
   def iterate_without_duplicates(tracks)
     tracks.each do |current|
-      if @previous_track && assert_no_duplicate(@previous_track, current)
-        yield @previous_track
-      end
+      yield @previous_track if @previous_track && assert_no_duplicate(@previous_track, current)
       @previous_track = current
     end
   end
@@ -107,7 +104,12 @@ class Importer
 
   def create_logger
     if settings['importer']['log'] == 'syslog'
-      Syslog::Logger.new('raar-acr-tracks-importer')
+      require 'syslog/logger'
+      Syslog::Logger.new('raar-acr-tracks-importer').tap do |logger|
+        logger.formatter = proc { |severity, _datetime, _prog, msg|
+          "#{Logger::SEV_LABEL[severity]} #{msg}"
+        }
+      end
     else
       Logger.new(STDOUT)
     end
