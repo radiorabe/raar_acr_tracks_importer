@@ -10,7 +10,8 @@ class AcrClient
     body = fetch(date).to_s
     JSON
       .parse(body)
-      .map { |e| Track.new(track_attrs(e)) }
+      .map { |e| build_track(e) }
+      .compact
       .sort_by { |t| [t.started_at, t.finished_at] }
   end
 
@@ -37,11 +38,17 @@ class AcrClient
     end
   end
 
-  def track_attrs(entry)
+  def build_track(entry)
     metadata = entry['metadata']
+    return if !metadata || !metadata['music']
+
+    Track.new(track_attrs(metadata))
+  end
+
+  def track_attrs(metadata)
     music = metadata['music'].first
     artists = music['artists']
-    time = Time.parse(metadata['timestamp_utc'] + ' UTC')
+    time = Time.parse("#{metadata['timestamp_utc']} UTC")
     {
       title: music['title'],
       artist: artists ? artists.map { |a| a['name'] }.uniq.join(', ') : nil,
