@@ -70,9 +70,7 @@ class RaarClient
   def raar_http_options
     @raar_http_options ||=
       (settings['options'] || {})
-      .each_with_object({}) do |(key, val), hash|
-        hash[key.to_sym] = val
-      end
+      .transform_keys(&:to_sym)
   end
 
 end

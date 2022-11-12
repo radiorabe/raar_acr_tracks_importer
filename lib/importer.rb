@@ -40,8 +40,8 @@ class Importer
         imported_count += 1
       end
     end
-    logger.info("Imported #{imported_count} of #{tracks.size}" \
-                " tracks for #{date}")
+    logger.info("Imported #{imported_count} of #{tracks.size} " \
+                "tracks for #{date}")
   end
 
   def iterate_without_duplicates(tracks)
@@ -55,8 +55,8 @@ class Importer
     if previous.same?(current)
       # Ignore duplicates
       current.started_at = previous.started_at
-      logger.debug("Ignoring duplicate track #{current.title}" \
-                   " at #{current.started_at}")
+      logger.debug("Ignoring duplicate track #{current.title} " \
+                   "at #{current.started_at}")
       false
     else
       assert_no_overlapping(previous, current)
@@ -69,8 +69,8 @@ class Importer
     # previous overlaps into current => set previous finished_at earlier
     if current.started_at < previous.finished_at
       logger.debug("Trim overlapping track #{previous.title} at " \
-                  "#{current.started_at} for " \
-                  "#{(previous.finished_at - current.started_at).round}s")
+                   "#{current.started_at} for " \
+                   "#{(previous.finished_at - current.started_at).round}s")
       previous.finished_at = current.started_at
     end
   end
@@ -111,7 +111,7 @@ class Importer
         }
       end
     else
-      Logger.new(STDOUT)
+      Logger.new($stdout)
     end
   end
 
